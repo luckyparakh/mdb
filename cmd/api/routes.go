@@ -14,7 +14,7 @@ import (
 
 func (a *application) routes() *gin.Engine {
 	r := gin.Default()
-	r.Use(a.rateLimiter())
+	r.Use(a.rateLimiterPerHost())
 
 	// Custom Validations
 	v := binding.Validator.Engine().(*validator.Validate)
