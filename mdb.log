@@ -1,0 +1,6 @@
+{"level":"Info","time":"2023-01-31T04:05:18Z","message":"starting server","properties":{"addr":"4000","env":"development"}}
+{"level":"Fatal","time":"2023-01-31T04:05:18Z","message":"listen tcp :4000: bind: address already in use","trace":"goroutine 1 [running]:\nruntime/debug.Stack()\n\t/usr/lib/go-1.18/src/runtime/debug/stack.go:24 +0x65\nmdb/internal/jsonlog.(*Logger).print(0xc0003c76b0, 0x2, {0xc0003fe600, 0x2e}, 0x0)\n\t/home/rishi/repos/mdb/internal/jsonlog/jsonlog.go:63 +0x1fb\nmdb/internal/jsonlog.(*Logger).PrintFatal(0xc000377500?, {0x946740?, 0xc0003a2f50?}, 0xf?)\n\t/home/rishi/repos/mdb/internal/jsonlog/jsonlog.go:88 +0x4b\nmain.main()\n\t/home/rishi/repos/mdb/cmd/api/main.go:79 +0x750\n"}
+{"level":"Info","time":"2023-01-31T04:11:17Z","message":"starting server","properties":{"addr":"4000","env":"development"}}
+{"level":"Info","time":"2023-02-02T02:40:55Z","message":"starting server","properties":{"addr":"4000","env":"development"}}
+{"level":"Info","time":"2023-02-02T02:51:02Z","message":"starting server","properties":{"addr":"4000","env":"development"}}
+{"level":"Info","time":"2023-02-02T02:55:10Z","message":"starting server","properties":{"addr":"4000","env":"development"}}
