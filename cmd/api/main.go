@@ -4,13 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"mdb/internal/data"
 	"mdb/internal/jsonlog"
-	"net/http"
+	"mdb/internal/mailer"
 	"os"
+	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -27,10 +27,17 @@ type config struct {
 		maxIdleConns int
 		maxIdleTime  string
 	}
-	limiter struct{
+	limiter struct {
 		enable bool
-		rps float64
-		burst int 
+		rps    float64
+		burst  int
+	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
 	}
 }
 
@@ -38,6 +45,8 @@ type application struct {
 	config config
 	logger *jsonlog.Logger
 	models data.Models
+	mailer mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 func main() {
@@ -51,7 +60,12 @@ func main() {
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "Maximun Idle time for a DB Connection")
 	flag.IntVar(&cfg.limiter.burst, "limiter-brust", 4, "Rate Limiter max brust")
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate Limiter max rate per minute")
-	flag.BoolVar(&cfg.limiter.enable,"limiter-enabled",true,"Enable rate limiter")
+	flag.BoolVar(&cfg.limiter.enable, "limiter-enabled", true, "Enable rate limiter")
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "127.0.0.1", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "MDB <noreply@mdb.rp.net>", "SMTP sender")
 	flag.Parse()
 	// logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 	db, errDB := openDB(cfg)
@@ -68,22 +82,10 @@ func main() {
 		config: cfg,
 		logger: jLogger,
 		models: data.NewModel(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%v", cfg.port),
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		ErrorLog:     log.New(jLogger, "", 0),
-	}
-	app.logger.PrintInfo("starting server", map[string]string{
-		"addr": cfg.port,
-		"env":  cfg.env,
-	})
-	// logger.Printf("starting %s server on %v port.", cfg.env, cfg.port)
-	// err := r.Run(fmt.Sprintf(":%d", cfg.port))
-	err := srv.ListenAndServe()
+
+	err := app.server()
 	if err != nil {
 		app.logger.PrintFatal(err, nil)
 	}

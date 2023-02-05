@@ -23,3 +23,16 @@ func addDefaultValue(lm *data.ListMovie) {
 		lm.Sort = "id"
 	}
 }
+
+func (a *application) Background(fn func()) {
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		defer func() {
+			if err := recover(); err != nil {
+				a.logger.PrintError(err.(error), nil)
+			}
+		}()
+		fn()
+	}()
+}

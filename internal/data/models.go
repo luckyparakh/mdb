@@ -2,12 +2,7 @@ package data
 
 import (
 	"database/sql"
-	"errors"
 	"time"
-)
-
-var (
-	ErrRecordNotFound = errors.New("record not found")
 )
 
 type Movie struct {
@@ -25,6 +20,11 @@ type ListMovie struct {
 	Genres []string `form:"genres" binding:"omitempty,genre"`
 	Filters
 }
+type IUser interface {
+	Update(*User) error
+	GetByEmail(string) (*User, error)
+	Insert(*User) error
+}
 
 type Models struct {
 	Movies interface {
@@ -34,11 +34,27 @@ type Models struct {
 		Delete(id int64) error
 		GetAll(string, []string, Filters) ([]*Movie, *Metadata, error)
 	}
+	User IUser
+}
+
+type User struct {
+	ID        int64     `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	Name      string    `json:"name" binding:"required,min=2,max=255"`
+	Email     string    `json:"email" binding:"required,email"`
+	Password  password  `json:"-"`
+	Activated bool      `json:"activated"`
+	Version   int       `json:"-"`
+}
+type password struct {
+	plaintext *string `json:"-" binding:"required,min=2,max=255"`
+	hash      []byte  `json:"-" binding:"required"`
 }
 
 func NewModel(db *sql.DB) Models {
 	return Models{
 		Movies: MovieModel{DB: db},
+		User:   UserModel{DB: db},
 	}
 }
 
