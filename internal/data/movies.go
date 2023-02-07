@@ -153,7 +153,6 @@ type MockMovieModel struct{}
 func (m MockMovieModel) Insert(movie *Movie) error {
 	return nil
 }
-
 func (m MockMovieModel) Get(id int64) (*Movie, error) {
 	return nil, nil
 }

@@ -24,6 +24,13 @@ type IUser interface {
 	Update(*User) error
 	GetByEmail(string) (*User, error)
 	Insert(*User) error
+	GetForToken(tokenScope, tokenPlaintext string) (*User, error)
+}
+
+type IToken interface {
+	Delete(int64, string) error
+	Insert(*Token) error
+	New(int64, time.Duration, string) (*Token, error)
 }
 
 type Models struct {
@@ -34,7 +41,8 @@ type Models struct {
 		Delete(id int64) error
 		GetAll(string, []string, Filters) ([]*Movie, *Metadata, error)
 	}
-	User IUser
+	User  IUser
+	Token IToken
 }
 
 type User struct {
@@ -51,10 +59,19 @@ type password struct {
 	hash      []byte  `json:"-" binding:"required"`
 }
 
+type Token struct {
+	Plaintext string
+	Hash      []byte
+	UserID    int64
+	Expiry    time.Time
+	Scope     string
+}
+
 func NewModel(db *sql.DB) Models {
 	return Models{
 		Movies: MovieModel{DB: db},
 		User:   UserModel{DB: db},
+		Token:  TokenModel{DB: db},
 	}
 }
 

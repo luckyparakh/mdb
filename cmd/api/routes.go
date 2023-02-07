@@ -29,7 +29,8 @@ func (a *application) routes() *gin.Engine {
 	r.GET("/v1/movies", a.listMoviesHandler)
 	r.PATCH("/v1/movies/:id", a.updateMovieHandler)
 	r.DELETE("/v1/movies/:id", a.deleteMovieHandler)
-	r.POST("/v1/users",a.registerUserHandler)
+	r.POST("/v1/users", a.registerUserHandler)
+	r.PUT("/v1/users/activated", a.activateUserHandler)
 	r.NoMethod(a.noMethodHandler)
 	r.NoRoute(a.noRouteHandler)
 	return r

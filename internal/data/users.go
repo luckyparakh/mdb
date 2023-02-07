@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -113,4 +114,38 @@ func (m UserModel) Update(user *User) error {
 		}
 	}
 	return nil
+}
+
+func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
+	query := `SELECT users.id, users.created_at, users.name, users.email,
+				users.password_hash, users.activated, users.version
+				FROM users
+				INNER JOIN tokens
+				ON users.id = tokens.user_id
+				WHERE tokens.hash = $1
+				AND tokens.scope = $2
+				AND tokens.expiry > $3`
+	token := sha256.Sum256([]byte(tokenPlaintext))
+	args := []interface{}{token[:], tokenScope, time.Now()}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var user User
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Name,
+		&user.Email,
+		&user.Password.hash,
+		&user.Activated,
+		&user.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, err
+		default:
+			return nil, err
+		}
+	}
+	return &user, nil
 }
