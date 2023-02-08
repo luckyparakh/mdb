@@ -10,13 +10,20 @@ import (
 )
 
 const (
-	ScopeActivation = "activation"
+	ScopeActivation     = "activation"
+	ScopeAuthentication = "authentication"
 )
 
 type TokenModel struct {
 	DB *sql.DB
 }
 
+func ValidateTokenPlaintext(plainToken string) bool {
+	if plainToken == "" || len(plainToken) != 26 {
+		return false
+	}
+	return true
+}
 func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error) {
 	token := &Token{
 		UserID: userID,

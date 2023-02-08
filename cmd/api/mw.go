@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"mdb/internal/data"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -72,4 +74,32 @@ func (app *application) rateLimiterPerHost() gin.HandlerFunc {
 		}
 	}
 	return func(ctx *gin.Context) {}
+}
+
+func (app *application) authenticate() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		authorizationHeader := ctx.GetHeader("Authorization")
+		if authorizationHeader == "" {
+			app.contextSetUser(ctx, data.AnonymousUser)
+			ctx.Next()
+			return
+		}
+		headerData := strings.Split(authorizationHeader, " ")
+		if len(headerData) != 2 || headerData[0] != "Bearer" {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": "Invalid Request"})
+			return
+		}
+		token := headerData[1]
+		if !data.ValidateTokenPlaintext(token) {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"msg": "Invalid Token"})
+			return
+		}
+		user, err := app.models.User.GetForToken(data.ScopeAuthentication, token)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"msg": "Invalid Token as no user found against it"})
+			return
+		}
+		app.contextSetUser(ctx, user)
+		ctx.Next()
+	}
 }

@@ -17,6 +17,8 @@ type UserModel struct {
 
 const userTimeout = 3
 
+var AnonymousUser = &User{}
+
 func (p *password) Set(plaintextPassword string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), 12)
 	if err != nil {
@@ -38,6 +40,10 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
 }
 
 func (m UserModel) Insert(user *User) error {

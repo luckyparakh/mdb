@@ -60,11 +60,11 @@ type password struct {
 }
 
 type Token struct {
-	Plaintext string
-	Hash      []byte
-	UserID    int64
-	Expiry    time.Time
-	Scope     string
+	Plaintext string    `json:"token"`
+	Hash      []byte    `json:"-"`
+	UserID    int64     `json:"-"`
+	Expiry    time.Time `json:"expire"`
+	Scope     string    `json:"-"`
 }
 
 func NewModel(db *sql.DB) Models {

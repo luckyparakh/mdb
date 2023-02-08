@@ -95,3 +95,39 @@ func (a *application) activateUserHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User Activated", "user": user})
 }
+
+func (a *application) createAuthenticationTokenHandler(c *gin.Context) {
+	var input struct {
+		Email    string `json:"email" binding:"required,email"`
+		Passowrd string `json:"password" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		a.logger.PrintError(err, map[string]string{"activateTokenAuth": "error while binding user input"})
+		c.JSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		return
+	}
+	user, err := a.models.User.GetByEmail(input.Email)
+	if err != nil {
+		a.logger.PrintError(err, map[string]string{"activateTokenAuth": "error while getting user details by email"})
+		c.JSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		return
+	}
+	match, err := user.Password.Matches(input.Passowrd)
+	if err != nil {
+		a.logger.PrintError(err, map[string]string{"activateTokenAuth": "error while matching password"})
+		c.JSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		return
+	}
+	if !match {
+		a.logger.PrintInfo("activateTokenAuth:Password mismatch", nil)
+		c.JSON(http.StatusBadRequest, gin.H{"err": "password mismatch"})
+		return
+	}
+	token, err := a.models.Token.New(user.ID, 24*time.Hour, data.ScopeAuthentication)
+	if err != nil {
+		a.logger.PrintError(err, map[string]string{"activateTokenAuth": "error while generating token"})
+		c.JSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"msg": "Token created successfully", "token": token})
+}

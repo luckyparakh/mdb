@@ -15,6 +15,7 @@ import (
 func (a *application) routes() *gin.Engine {
 	r := gin.Default()
 	r.Use(a.rateLimiterPerHost())
+	r.Use(a.authenticate())
 
 	// Custom Validations
 	v := binding.Validator.Engine().(*validator.Validate)
@@ -31,6 +32,7 @@ func (a *application) routes() *gin.Engine {
 	r.DELETE("/v1/movies/:id", a.deleteMovieHandler)
 	r.POST("/v1/users", a.registerUserHandler)
 	r.PUT("/v1/users/activated", a.activateUserHandler)
+	r.POST("/v1/tokens/authentication", a.createAuthenticationTokenHandler)
 	r.NoMethod(a.noMethodHandler)
 	r.NoRoute(a.noRouteHandler)
 	return r
