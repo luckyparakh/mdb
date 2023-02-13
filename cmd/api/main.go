@@ -84,7 +84,7 @@ func main() {
 		models: data.NewModel(db),
 		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
-
+	customMetric(db)
 	err := app.server()
 	if err != nil {
 		app.logger.PrintFatal(err, nil)

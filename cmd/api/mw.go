@@ -1,6 +1,8 @@
 package main
 
 import (
+	"expvar"
+	"fmt"
 	"log"
 	"mdb/internal/data"
 	"net/http"
@@ -10,11 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
-)
-
-const (
-	reqRate  rate.Limit = 2
-	reqBrust int        = 4
 )
 
 func (app *application) rateLimiter() gin.HandlerFunc {
@@ -101,5 +98,60 @@ func (app *application) authenticate() gin.HandlerFunc {
 		}
 		app.contextSetUser(ctx, user)
 		ctx.Next()
+	}
+}
+
+func (app *application) requireAuthenticatedUser() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		user := app.contextGetUser(ctx)
+		if user.IsAnonymous() {
+			app.authRequiredError(ctx, "authenticate to access this resource")
+			return
+		}
+		ctx.Next()
+	}
+}
+func (app *application) requireActivatedUser() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		user := app.contextGetUser(ctx)
+		if !user.Activated {
+			app.inactiveAccountError(ctx)
+			return
+		}
+		ctx.Next()
+	}
+}
+
+func (app *application) requirePermission(code string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		user := app.contextGetUser(ctx)
+		perms, err := app.models.Permission.GetAllForUser(user.ID)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"msg": "Not able to read permissions"})
+			return
+		}
+		if !perms.Include(code) {
+			app.noPermitError(ctx)
+			return
+		}
+		ctx.Next()
+	}
+}
+
+func (app *application) metrics() gin.HandlerFunc {
+	totalRequestsReceived := expvar.NewInt("total_requests_received")
+	totalResponsesSent := expvar.NewInt("total_responses_sent")
+	totalProcessingTimeMicroseconds := expvar.NewInt("total_processing_time_μs")
+	// totalResponsesSentByStatus := expvar.NewMap("total_responses_sent_by_status")
+	return func(ctx *gin.Context) {
+		fmt.Println("Metirc")
+		start := time.Now()
+		totalRequestsReceived.Add(1)
+		ctx.Next()
+		// Can't httpsnoop as gin context does not have http handler
+		// httpsnoop.CaptureMetrics(ctx.Handler(), ctx.Writer, ctx.Request)
+		totalResponsesSent.Add(1)
+		diff := time.Since(start).Microseconds()
+		totalProcessingTimeMicroseconds.Add(diff)
 	}
 }

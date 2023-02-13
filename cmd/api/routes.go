@@ -14,7 +14,7 @@ import (
 
 func (a *application) routes() *gin.Engine {
 	r := gin.Default()
-	r.Use(a.rateLimiterPerHost())
+	r.Use(a.metrics(), a.rateLimiterPerHost())
 	r.Use(a.authenticate())
 
 	// Custom Validations
@@ -25,14 +25,24 @@ func (a *application) routes() *gin.Engine {
 
 	// r.Use(a.bodyValidationMW)
 	r.GET("/v1/healthcheck", a.healthcheckHandler)
-	r.POST("/v1/movies", a.createMovieHandler)
-	r.GET("/v1/movies/:id", a.showMovieHandler)
-	r.GET("/v1/movies", a.listMoviesHandler)
-	r.PATCH("/v1/movies/:id", a.updateMovieHandler)
-	r.DELETE("/v1/movies/:id", a.deleteMovieHandler)
+
+	//Movies API
+	movieGroup := r.Group("/v1/movies")
+	movieGroup.Use(a.requireAuthenticatedUser(), a.requireActivatedUser())
+	movieGroupRead := movieGroup.Group("")
+	movieGroupRead.Use(a.requirePermission("movies:read"))
+	movieGroupRead.GET("/:id", a.showMovieHandler)
+	movieGroupRead.GET("", a.listMoviesHandler)
+	movieGroupWrite := movieGroup.Group("")
+	movieGroupWrite.Use(a.requirePermission("movies:write"))
+	movieGroupWrite.POST("", a.createMovieHandler)
+	movieGroupWrite.PATCH("/:id", a.updateMovieHandler)
+	movieGroupWrite.DELETE("/:id", a.deleteMovieHandler)
+
 	r.POST("/v1/users", a.registerUserHandler)
 	r.PUT("/v1/users/activated", a.activateUserHandler)
 	r.POST("/v1/tokens/authentication", a.createAuthenticationTokenHandler)
+	r.GET("/debug/vars", expVarHandler(map[string]any{"memstats": nil, "cmdline": nil}))
 	r.NoMethod(a.noMethodHandler)
 	r.NoRoute(a.noRouteHandler)
 	return r

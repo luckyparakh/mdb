@@ -2,10 +2,10 @@ package data
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base32"
-	"math/rand"
 	"time"
 )
 
@@ -30,8 +30,8 @@ func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error
 		Expiry: time.Now().Add(ttl),
 		Scope:  scope,
 	}
-	randomByte := make([]byte, 16)
-	_, err := rand.Read(randomByte)
+
+	randomByte, err := generateRandom()
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +39,15 @@ func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error
 	hash := sha256.Sum256([]byte(token.Plaintext))
 	token.Hash = hash[:]
 	return token, nil
+}
+
+func generateRandom() ([]byte, error) {
+	randomByte := make([]byte, 16)
+	_, err := rand.Read(randomByte)
+	if err != nil {
+		return nil, err
+	}
+	return randomByte, nil
 }
 
 func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {

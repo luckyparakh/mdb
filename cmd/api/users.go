@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"mdb/internal/data"
 	"net/http"
 	"time"
@@ -40,13 +41,20 @@ func (a *application) registerUserHandler(c *gin.Context) {
 			return
 		}
 	}
+
+	err = a.models.Permission.AddForUser(user.ID, "movies:read")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"err": "Failed to add permission"})
+		return
+	}
+
 	token, err := a.models.Token.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
 	if err != nil {
 		a.logger.PrintError(err, nil)
 		c.JSON(http.StatusInternalServerError, gin.H{"err": err})
 		return
 	}
-	// msg := fmt.Sprintf("User %v created Successfully.", user)
+	fmt.Printf("Token:%v\n", token)
 	a.Background(func() {
 		data := map[string]any{
 			"activationToken": token.Plaintext,

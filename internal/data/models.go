@@ -32,7 +32,10 @@ type IToken interface {
 	Insert(*Token) error
 	New(int64, time.Duration, string) (*Token, error)
 }
-
+type IPermission interface {
+	GetAllForUser(userID int64) (Permissions, error)
+	AddForUser(userID int64, codes ...string) error
+}
 type Models struct {
 	Movies interface {
 		Insert(movie *Movie) error
@@ -41,8 +44,9 @@ type Models struct {
 		Delete(id int64) error
 		GetAll(string, []string, Filters) ([]*Movie, *Metadata, error)
 	}
-	User  IUser
-	Token IToken
+	User       IUser
+	Token      IToken
+	Permission IPermission
 }
 
 type User struct {
@@ -69,9 +73,10 @@ type Token struct {
 
 func NewModel(db *sql.DB) Models {
 	return Models{
-		Movies: MovieModel{DB: db},
-		User:   UserModel{DB: db},
-		Token:  TokenModel{DB: db},
+		Movies:     MovieModel{DB: db},
+		User:       UserModel{DB: db},
+		Token:      TokenModel{DB: db},
+		Permission: PermissionModel{DB: db},
 	}
 }
 
