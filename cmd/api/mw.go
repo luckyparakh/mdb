@@ -14,22 +14,22 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func (app *application) rateLimiter() gin.HandlerFunc {
-	// Any code here will run only once, when we wrap something with the middleware.
+// func (app *application) rateLimiter() gin.HandlerFunc {
+// 	// Any code here will run only once, when we wrap something with the middleware.
 
-	// Initialize a new rate limiter which allows an average of 2 requests per second,
-	// with a maximum of 4 requests in a single ‘burst’.
+// 	// Initialize a new rate limiter which allows an average of 2 requests per second,
+// 	// with a maximum of 4 requests in a single ‘burst’.
 
-	limiter := rate.NewLimiter(rate.Limit(app.config.limiter.rps), app.config.limiter.burst)
-	return func(ctx *gin.Context) {
-		// Any code here will run for every request that the middleware handles.
-		if !limiter.Allow() {
-			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"msg": "rate limit exceeded"})
-			return
-		}
-		ctx.Next()
-	}
-}
+// 	limiter := rate.NewLimiter(rate.Limit(app.config.limiter.rps), app.config.limiter.burst)
+// 	return func(ctx *gin.Context) {
+// 		// Any code here will run for every request that the middleware handles.
+// 		if !limiter.Allow() {
+// 			ctx.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"msg": "rate limit exceeded"})
+// 			return
+// 		}
+// 		ctx.Next()
+// 	}
+// }
 
 func (app *application) rateLimiterPerHost() gin.HandlerFunc {
 	if app.config.limiter.enable {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"mdb/internal/data"
@@ -16,7 +17,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const version = "1.0.0"
+var version string
+var buildTime string
 
 type config struct {
 	env  string
@@ -51,6 +53,7 @@ type application struct {
 
 func main() {
 	var cfg config
+	displayVersion := flag.Bool("version", false, "Display version and exit")
 	flag.StringVar(&cfg.port, "port", "4000", "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment(development|staging|production)")
 	// flag.StringVar(&cfg.db.dsn, "dsn",os.Getenv("MDB_DSN"), "PSQL DSN")
@@ -67,6 +70,12 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "MDB <noreply@mdb.rp.net>", "SMTP sender")
 	flag.Parse()
+
+	if *displayVersion {
+		fmt.Printf("Version:\t%s\n", version)
+		fmt.Printf("Build time:\t%s\n", buildTime)
+		os.Exit(0)
+	}
 	// logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 	db, errDB := openDB(cfg)
 	if errDB != nil {

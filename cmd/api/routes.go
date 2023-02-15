@@ -1,11 +1,7 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"mdb/internal/data"
 	"mdb/internal/validation"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -48,19 +44,19 @@ func (a *application) routes() *gin.Engine {
 	return r
 }
 
-func (a *application) bodyValidationMW(c *gin.Context) {
-	var mv data.Movie
-	maxBytes := 1_048_576
-	body := c.Request.Body
-	body = http.MaxBytesReader(c.Writer, body, int64(maxBytes))
-	dec := json.NewDecoder(body)
-	dec.DisallowUnknownFields()
-	err := dec.Decode(&mv)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, a.createError(err, "Bad req at MW"))
-		c.Abort()
-		return
-	}
-	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "body", body))
-	c.Next()
-}
+// func (a *application) bodyValidationMW(c *gin.Context) {
+// 	var mv data.Movie
+// 	maxBytes := 1_048_576
+// 	body := c.Request.Body
+// 	body = http.MaxBytesReader(c.Writer, body, int64(maxBytes))
+// 	dec := json.NewDecoder(body)
+// 	dec.DisallowUnknownFields()
+// 	err := dec.Decode(&mv)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, a.createError(err, "Bad req at MW"))
+// 		c.Abort()
+// 		return
+// 	}
+// 	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "body", body))
+// 	c.Next()
+// }

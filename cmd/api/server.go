@@ -13,6 +13,7 @@ import (
 )
 
 func (app *application) server() error {
+	// https://www.sobyte.net/post/2022-01/go-http-server-timeout/
 	shutDownErr := make(chan error)
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%v", app.config.port),
